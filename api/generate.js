@@ -3,7 +3,9 @@ export default async function handler(req, res) {
 
   const { skills } = req.body;
   const apiKey = process.env.GEMINI_API_KEY;
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+  // FIX: Switched to gemini-2.0-flash which is the stable model for v1beta
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
   const payload = {
     contents: [{
@@ -20,9 +22,12 @@ export default async function handler(req, res) {
 
     const data = await response.json();
 
-    if (data.error) throw new Error(data.error.message);
+    if (data.error) {
+       console.error("API Error Detail:", data.error);
+       throw new Error(data.error.message || "API Error");
+    }
 
-    // Gemini's direct response structure is slightly different
+    // Success: Extract the text from the Gemini response structure
     const aiText = data.candidates[0].content.parts[0].text;
     
     return res.status(200).json({ result: aiText });
