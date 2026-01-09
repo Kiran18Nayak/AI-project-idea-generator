@@ -1,31 +1,33 @@
-import OpenAI from "openai";
-
-const openai = new OpenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-  // This is the correct base URL for the OpenAI SDK to work with Gemini
-  baseURL: "https://generativelanguage.googleapis.com/v1beta" 
-});
-
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Only POST allowed" });
-  }
+  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
   const { skills } = req.body;
+  const apiKey = process.env.GEMINI_API_KEY;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+  const payload = {
+    contents: [{
+      parts: [{ text: `Generate 3 project ideas for: ${skills.join(", ")}` }]
+    }]
+  };
 
   try {
-    const response = await openai.chat.completions.create({
-      model: "gemini-1.5-flash", // Use a stable Gemini model
-      messages: [
-        { role: "system", content: "You are a helpful assistant." },
-        { role: "user", content: `Generate 3 project ideas for: ${skills.join(", ")}` }
-      ],
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
     });
 
-    return res.status(200).json({ result: response.choices[0].message.content });
+    const data = await response.json();
+
+    if (data.error) throw new Error(data.error.message);
+
+    // Gemini's direct response structure is slightly different
+    const aiText = data.candidates[0].content.parts[0].text;
+    
+    return res.status(200).json({ result: aiText });
   } catch (error) {
-    console.error("Gemini Error:", error);
-    // Returning the actual error message helps you debug in the browser console
-    return res.status(500).json({ error: error.message || "AI generation failed" });
+    console.error("Direct Gemini Error:", error);
+    return res.status(500).json({ error: error.message });
   }
 }
