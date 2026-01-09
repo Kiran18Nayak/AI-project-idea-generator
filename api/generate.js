@@ -1,37 +1,31 @@
 import OpenAI from "openai";
 
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
-    return res.status(405).json({ error: "Only POST allowed" });
+    return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY
-  });
-
   const { skills } = req.body;
-
-  const prompt = `
-Generate 3 creative software project ideas based on these skills:
-${skills.join(", ")}
-
-For each project provide:
-- Project Title
-- One-line Description
-- Difficulty Level
-`;
+  if (!skills || !Array.isArray(skills)) {
+    return res.status(400).json({ error: "Skills are required" });
+  }
 
   try {
     const response = await openai.chat.completions.create({
       model: "gpt-4o-mini",
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.8
+      messages: [
+        { role: "system", content: "You are a helpful assistant." },
+        { role: "user", content: `Generate 3 project ideas for: ${skills.join(", ")}` }
+      ],
     });
 
-    res.status(200).json({
-      result: response.choices[0].message.content
-    });
+    return res.status(200).json({ result: response.choices[0].message.content });
   } catch (error) {
-    res.status(500).json({ error: "AI generation failed" });
+    console.error("OpenAI Error:", error);
+    return res.status(500).json({ error: error.message || "AI generation failed" });
   }
 }
