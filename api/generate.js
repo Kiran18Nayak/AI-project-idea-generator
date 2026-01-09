@@ -1,9 +1,8 @@
 import OpenAI from "openai";
 
-// Change 1: Update the configuration to point to Google's servers
 const openai = new OpenAI({
-  apiKey: process.env.GEMINI_API_KEY, // Use your new Gemini key
-  baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/" // Point to Google
+  apiKey: process.env.GEMINI_API_KEY, // This must match the name in Vercel!
+  baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/"
 });
 
 export default async function handler(req, res) {
@@ -13,7 +12,7 @@ export default async function handler(req, res) {
 
   try {
     const response = await openai.chat.completions.create({
-      model: "gemini-1.5-flash", // Change 2: Use a Gemini model name
+      model: "gemini-1.5-flash", // Use a Gemini model name
       messages: [
         { role: "system", content: "You are a helpful assistant." },
         { role: "user", content: `Generate 3 project ideas for: ${skills.join(", ")}` }
