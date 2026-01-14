@@ -1,38 +1,42 @@
 export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+  if (req.method !== "POST") return res.status(405).json({ error: "Only POST allowed" });
 
   const { skills } = req.body;
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY;
 
-  // FIX: Switched to gemini-2.0-flash which is the stable model for v1beta
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-
-  const payload = {
-    contents: [{
-      parts: [{ text: `Generate 3 project ideas for: ${skills.join(", ")}` }]
-    }]
-  };
+  // Groq uses an OpenAI-compatible URL structure
+  const url = "https://api.groq.com/openai/v1/chat/completions";
 
   try {
     const response = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "llama-3.3-70b-versatile", // This is a powerful, free Groq model
+        messages: [
+          { role: "system", content: "You are a software architect. Generate 3 project ideas." },
+          { role: "user", content: `Suggest 3 projects for someone who knows: ${skills.join(", ")}` }
+        ],
+        temperature: 0.7
+      })
     });
 
     const data = await response.json();
 
     if (data.error) {
-       console.error("API Error Detail:", data.error);
-       throw new Error(data.error.message || "API Error");
+      return res.status(400).json({ error: data.error.message });
     }
 
-    // Success: Extract the text from the Gemini response structure
-    const aiText = data.candidates[0].content.parts[0].text;
+    // This path is safer than your previous one
+    const aiContent = data.choices?.[0]?.message?.content || "No ideas generated.";
     
-    return res.status(200).json({ result: aiText });
+    return res.status(200).json({ result: aiContent });
+
   } catch (error) {
-    console.error("Direct Gemini Error:", error);
-    return res.status(500).json({ error: error.message });
+    console.error("Deployment Error:", error);
+    return res.status(500).json({ error: "Failed to connect to the AI provider." });
   }
 }
