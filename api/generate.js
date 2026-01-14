@@ -16,9 +16,20 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: "llama-3.3-70b-versatile", // This is a powerful, free Groq model
+        // Inside your generate.js handler:
         messages: [
-          { role: "system", content: "You are a software architect. Generate 3 project ideas." },
-          { role: "user", content: `Suggest 3 projects for someone who knows: ${skills.join(", ")}` }
+          { role: "system", content: "You are a software architect. Generate project ideas in a strict format." },
+          { 
+            role: "user", 
+            content: `Suggest 3 projects for someone with: ${skills.join(", ")}. 
+            Use this EXACT format for each:
+            ### [Project Name]
+            **Description:** [One line]
+            **Features:**
+            * [Feature A]
+            * [Feature B]
+            **Difficulty Level:** [Beginner/Intermediate/Advanced]` 
+          }
         ],
         temperature: 0.7
       })
