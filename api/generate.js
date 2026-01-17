@@ -21,7 +21,7 @@ export default async function handler(req, res) {
           { role: "system", content: "You are a software architect. Generate project ideas in a strict format." },
           { 
             role: "user", 
-            content: `Suggest 3 projects for someone with: ${skills.join(", ")}. 
+            content: `Suggest 5 projects for someone with: ${skills.join(", ")}. 
             Use this EXACT format for each:
             ### [Project Name]
             **Description:** [One line]
